@@ -1,0 +1,32 @@
+﻿@model IEnumerable<TestTaskArticles.Models.ArticlesModel>
+
+<h1>Список статей</h1>
+<table class="table">
+    <thead>
+        <tr>
+            <th>№</th>
+            <th>Текст статьи</th>
+            <th>Детали</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+
+            <tr>
+                <td>@Html.DisplayFor(modelItem => item.Id)</td>
+
+                @if (item.Text.Length <= 350)
+                {
+                    <td>@item.Text</td>;
+                }
+                @if (item.Text.Length > 350)
+                {
+                    <td>@String.Format("{0}...", @item.Text.Substring(0, 349))</td>;
+                }
+
+                <td>@Html.ActionLink("Читать", "ArticleDetails", new { id = item.Id })</td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -1,0 +1,168 @@
+﻿@using Microsoft.AspNetCore.Html;
+@using System.Text;
+@using System.IO;
+
+@model TestTaskArticles.Models.ArticlesModel
+
+@functions
+{
+    public static string _firstColor = "#C0DCC0";
+    public static string _secondColor = "#5E5E5E";
+    public static string _currentColor = _secondColor;
+    /// <summary>
+    /// Цвет фона для комментариев
+    /// </summary>
+    public static string Color
+    {
+        get
+        {
+            if (_currentColor == _firstColor)
+                _currentColor = _secondColor;
+            else
+                _currentColor = _firstColor;
+
+            return _currentColor;
+        }
+    }
+
+    /// <summary>
+    /// Получить html-строку всех комментариев к статье
+    /// </summary>
+    /// <param name="articlesModel">Модель статьи</param>
+    /// <returns>Html-строка</returns>
+    public static HtmlString GetAllCommentsByArticle(ArticlesModel articlesModel)
+    {
+        int articleId = articlesModel.Id;
+
+        TagBuilder listTag = new TagBuilder("ul");
+        listTag.Attributes["style"] = "background-color:#f5f5f5;margin-left: 5px;padding: 0;";
+
+        StringBuilder htmlSb = new StringBuilder();
+
+        foreach (CommentsModel commentsModel in articlesModel.Comments)
+        {
+            TagBuilder elementTag = new TagBuilder("li");
+            elementTag.Attributes["style"] = "background-color:#f5f5f5;";
+            //;border: solid 1px black;
+            elementTag.InnerHtml.AppendHtmlLine($"<b>{commentsModel.UserName}:</b><br>");
+            elementTag.InnerHtml.AppendHtmlLine($"{commentsModel.Text}<br>");
+            elementTag.InnerHtml.AppendHtmlLine(CommentLink(articleId, commentsModel.Id));
+
+            htmlSb.AppendLine(GetHtmlOfTag(elementTag));
+            if (commentsModel.ChildComments != null && commentsModel.ChildComments.Count > 0)
+            {
+                htmlSb.AppendLine(GetHtmlChildComments(commentsModel, articleId));
+            }
+        }
+
+        listTag.InnerHtml.AppendHtmlLine(htmlSb.ToString());
+        return new HtmlString(GetHtmlOfTag(listTag));
+    }
+
+    /// <summary>
+    /// Формирует html-строку дочерних комментариев
+    /// </summary>
+    /// <param name="commentsModel">Модель комментария</param>
+    /// <param name="articleId">id статьи</param>
+    /// <returns>Html-строку дочерних комментариев</returns>
+    public static string GetHtmlChildComments(CommentsModel commentsModel, int articleId)
+    {
+        TagBuilder listTag = new TagBuilder("ul");
+        listTag.Attributes["style"] = $"background-color:{Color};";
+
+        StringBuilder htmlSb = new StringBuilder();
+
+        if (commentsModel.ChildComments != null && commentsModel.ChildComments.Count > 0)
+        {
+            foreach (CommentsModel childComment in commentsModel.ChildComments)
+            {
+                TagBuilder elementTag = new TagBuilder("li");
+                elementTag.Attributes["style"] = "background-color:#D7D7D7;";
+
+                elementTag.InnerHtml.AppendHtmlLine($"<b>{childComment.UserName}:</b><br>");
+                elementTag.InnerHtml.AppendHtmlLine($"{childComment.Text}</br>");
+                elementTag.InnerHtml.AppendHtmlLine(CommentLink(articleId, childComment.Id));
+
+                htmlSb.AppendLine(GetHtmlOfTag(elementTag));
+
+                //Проверка дочерних комментариев у дочерних комментариев
+                if (childComment.ChildComments != null && childComment.ChildComments.Count > 0)
+                {
+                    htmlSb.AppendLine(GetHtmlChildComments(childComment, articleId));
+                }
+            }
+        }
+
+        listTag.InnerHtml.AppendHtmlLine(htmlSb.ToString());
+        return GetHtmlOfTag(listTag);
+    }
+
+    /// <summary>
+    /// Формирует html-строку ссылки на добавление комментария
+    /// </summary>
+    /// <param name="articleId">id статьи</param>
+    /// <param name="parentId">id родительского комментария</param>
+    /// <returns>Html-строка ссылки на добавление комментария</returns>
+    public static string CommentLink(int articleId, int parentId)
+    {
+        return $"<a href=\"/Articles/AddComment?articleId={articleId}&parentId={parentId}\">Комментировать</a>";
+    }
+
+    /// <summary>
+    /// Преобразовывает тег в html-строку
+    /// </summary>
+    /// <param name="tagBuilder">Тег</param>
+    /// <returns>Html-строка</returns>
+    public static string GetHtmlOfTag(TagBuilder tagBuilder)
+    {
+        string htmlOutput;
+        using (var writer = new StringWriter())
+        {
+            tagBuilder.WriteTo(writer, System.Text.Encodings.Web.HtmlEncoder.Default);
+            htmlOutput = writer.ToString();
+        }
+        return htmlOutput;
+    }
+}
+
+
+
+<style>
+    ul {
+        list-style-type: none;
+        padding-left: 10px;
+        padding-top: 10px;
+        padding-bottom: 5px;
+        border: solid 1px black;
+    }
+
+    li {
+        padding-left: 10px;
+        padding-right: 5px;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        border: solid 1px black;
+    }
+</style>
+<div>
+    <h1>Статья № @Html.DisplayFor(model => model.Id)</h1>
+    <hr />
+    <div>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Text)
+            <br>
+            @Html.ActionLink("Комментировать", "AddComment", new { articleId = Model.Id, parentId = 0, parentText = String.Empty })
+        </dd>
+    </div>
+</div>
+<hr />
+<h4>Комментарии</h4>
+<hr />
+<div>
+    @GetAllCommentsByArticle(Model)
+</div>
+
+<hr />
+<div>
+    <a asp-action="Index">К списку статей</a>
+</div>

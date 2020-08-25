@@ -1,0 +1,39 @@
+﻿@model TestTaskArticles.Models.CommentsModel
+
+<h4>Введите комментарий:</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="AddComment">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div>
+                <label class="control-label"><b>Id пользователя:</b></label>
+                <input asp-for="UserId" class="form-control" type="number" />
+                @Html.ValidationMessageFor(model => model.UserId, "", new { @class = "text-danger" })
+            </div>
+            <br>
+            <div>
+                <label class="control-label"><b>Текст:</b></label>
+                <textarea asp-for="Text" cols="50" rows="5"></textarea>
+                @Html.ValidationMessageFor(model => model.Text, "", new { @class ="text-danger"})
+            </div>
+
+            <input asp-for="ArticleId" class="form-control" hidden />
+            <input asp-for="ParentId" class="form-control" hidden />
+
+            <br>
+
+            <div class="form-group">
+                <input type="submit" value="Отправить" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">К списку статей</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}    
+}
